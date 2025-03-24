@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -29,6 +29,20 @@ jobs:
           source venv/bin/activate
           pytest
 
+      - name: Telegram Notification (Test Passed)
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN}}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_BOT_ID }}" \
+          -d text="✅ Tests Passed Successfully!"
+
+      - name: Send Telegram Notification (Tests Failed)
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_BOT_ID }}" \
+          -d text="❌ Tests Failed! Check GitHub Actions logs."
+
   deploy:
     needs: test
     runs-on: ubuntu-latest
@@ -36,4 +50,17 @@ jobs:
       - name: Trigger Render Deployment
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-          
+
+      - name: Telegram Notification (Deployment Successful)
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN}}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_BOT_ID }}" \
+          -d text="✅ Deployment Successful!"
+
+      - name: Send Telegram Notification (Tests Failed)
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_BOT_ID }}" \
+          -d text="❌ Deployment Failed! Check GitHub Actions logs."
